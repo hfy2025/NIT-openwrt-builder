@@ -1,0 +1,2 @@
+Welcome to My Custom OpenWrt!
+Built on $(date +%Y-%m-%d)
