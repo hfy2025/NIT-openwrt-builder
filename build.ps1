@@ -1,5 +1,3 @@
-# 构建脚本（Windows PowerShell）
-
 # 加载 .env 文件
 if (Test-Path .env) {
     Get-Content .env | Where-Object { $_ -notmatch '^#' } | ForEach-Object {
@@ -8,9 +6,9 @@ if (Test-Path .env) {
     }
 }
 
-# 默认参数
-$IMAGE = if ($env:IMAGE) { $env:IMAGE } else { "openwrt/imagebuilder:rockchip-armv8-24.10.1" }
-$PROFILE = if ($env:PROFILE) { $env:PROFILE } else { "friendlyarm_nanopi-r2s" }
+# 默认参数（优化为 x86-64）
+$IMAGE = if ($env:IMAGE) { $env:IMAGE } else { "openwrt/imagebuilder:x86-64-24.10.1" }
+$PROFILE = if ($env:PROFILE) { $env:PROFILE } else { "generic" }
 $OUTPUT_DIR = if ($env:OUTPUT_DIR) { $env:OUTPUT_DIR } else { "./bin" }
 $MIRROR = if ($env:MIRROR) { $env:MIRROR } else { "downloads.openwrt.org" }
 $WITH_PULL = if ($env:WITH_PULL) { $env:WITH_PULL } else { $true }
@@ -59,8 +57,8 @@ if ($WITH_PULL) {
     docker pull $IMAGE
 }
 
-# 运行 Docker 构建
+# 运行 Docker 构建（添加 x86 优化：启用 UEFI 等）
 $PACKAGES = (Get-Content modules/*/packages, custom_modules/*/packages) -join ' '
-docker run --name openwrt-builder -v "$PWD/files:/builder/files" -v "$PWD/modules:/builder/modules" -v "$PWD/custom_modules:/builder/custom_modules" -v "$PWD/$OUTPUT_DIR:/builder/bin" $MIRROR_CMD $IMAGE make image PROFILE=$PROFILE FILES=files PACKAGES="$PACKAGES" DISABLED_SERVICES=""
+docker run --name openwrt-builder -v "$PWD/files:/builder/files" -v "$PWD/modules:/builder/modules" -v "$PWD/custom_modules:/builder/custom_modules" -v "$PWD/$OUTPUT_DIR:/builder/bin" $MIRROR_CMD $IMAGE make image PROFILE=$PROFILE FILES=files PACKAGES="$PACKAGES" DISABLED_SERVICES="" V=s CONFIG_UEFI_SUPPORT=y
 
 Write-Output "构建完成！固件位于 $OUTPUT_DIR"
