@@ -1,4 +1,3 @@
-# 构建脚本
 #!/bin/bash
 
 # 加载 .env 文件
@@ -6,9 +5,9 @@ if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-# 默认参数
-IMAGE=${IMAGE:-openwrt/imagebuilder:rockchip-armv8-24.10.1}
-PROFILE=${PROFILE:-friendlyarm_nanopi-r2s}
+# 默认参数（优化为 x86-64）
+IMAGE=${IMAGE:-openwrt/imagebuilder:x86-64-24.10.1}
+PROFILE=${PROFILE:-generic}
 OUTPUT_DIR=${OUTPUT_DIR:-./bin}
 MIRROR=${MIRROR:-downloads.openwrt.org}
 WITH_PULL=${WITH_PULL:-true}
@@ -59,7 +58,7 @@ if [ "$WITH_PULL" = true ]; then
     docker pull $IMAGE
 fi
 
-# 运行 Docker 构建
-docker run --name openwrt-builder -v $(pwd)/files:/builder/files -v $(pwd)/modules:/builder/modules -v $(pwd)/custom_modules:/builder/custom_modules -v $(pwd)/$OUTPUT_DIR:/builder/bin $MIRROR_CMD $IMAGE make image PROFILE=$PROFILE FILES=files PACKAGES="$(cat modules/*/packages custom_modules/*/packages | tr '\n' ' ')" DISABLED_SERVICES=""
+# 运行 Docker 构建（添加 x86 优化：启用 UEFI 等）
+docker run --name openwrt-builder -v $(pwd)/files:/builder/files -v $(pwd)/modules:/builder/modules -v $(pwd)/custom_modules:/builder/custom_modules -v $(pwd)/$OUTPUT_DIR:/builder/bin $MIRROR_CMD $IMAGE make image PROFILE=$PROFILE FILES=files PACKAGES="$(cat modules/*/packages custom_modules/*/packages | tr '\n' ' ')" DISABLED_SERVICES="" V=s CONFIG_UEFI_SUPPORT=y
 
 echo "构建完成！固件位于 $OUTPUT_DIR"
